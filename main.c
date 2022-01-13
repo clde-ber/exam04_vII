@@ -133,7 +133,7 @@ int do_cd(char **cmd)
     return 0;
 }
 
-int exec(char *cmd, char **cmd_list, char **env, int has_pipe, int **pipefd, int i)
+int exec(char *cmd, char **cmd_list, char **env, int has_pipe, int **pipefd, int i, int len, char ***cmd_tab, char ***cmd_tab2)
 {
     int ret = 1;
     pid_t pid = 0;
@@ -161,6 +161,9 @@ int exec(char *cmd, char **cmd_list, char **env, int has_pipe, int **pipefd, int
             ft_putstr_fd(2, "error: cannot execute ");
             ft_putstr_fd(2, cmd);
             ft_putstr_fd(2, "\n");
+            free_triple_tab(cmd_tab);
+            free_triple_tab(cmd_tab2);
+            free_double_tab_len(pipefd, len);
             exit(status);
         }
         exit(status);
@@ -186,7 +189,7 @@ int exec(char *cmd, char **cmd_list, char **env, int has_pipe, int **pipefd, int
     return ret;
 }
 
-int exec_pipes(char ***cmd, char **env, int len)
+int exec_pipes(char ***cmd, char **env, int len, char ***cmd2)
 {
     int i = 0;
     int **pipefd = NULL;
@@ -216,7 +219,7 @@ int exec_pipes(char ***cmd, char **env, int len)
                 pipe_end = 1;
             pipe(pipefd[i + 1]);
         }
-        ret = exec(cmd[i][0], cmd[i], env, 1, pipefd, i + 1);
+        ret = exec(cmd[i][0], cmd[i], env, 1, pipefd, i + 1, len, cmd, cmd2);
         i++;
     }
     free_double_tab_len(pipefd, len);
@@ -280,9 +283,9 @@ int main(int ac, char **av, char **env)
     {
         pipe_cmd = parse_on_delimiter(0, cmd[i], "|");
         if (pipe_cmd && pipe_cmd[0] && pipe_cmd[0][0] && double_tab_len(cmd[i]) != double_tab_len(pipe_cmd[0]) && ft_strcmp(pipe_cmd[0][0], "cd"))
-            ret = exec_pipes(pipe_cmd, env, count_elements(cmd[i],"|") + 1);
+            ret = exec_pipes(pipe_cmd, env, count_elements(cmd[i],"|") + 1, cmd);
         else if (ft_strcmp(cmd[i][0], "cd"))
-            ret = exec(cmd[i][0], cmd[i], env, 0, NULL, 0);
+            ret = exec(cmd[i][0], cmd[i], env, 0, NULL, 0, 0, pipe_cmd, cmd);
         else
             ret = do_cd(cmd[i]);
         free_triple_tab(pipe_cmd);
